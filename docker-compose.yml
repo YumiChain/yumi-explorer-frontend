@@ -73,7 +73,7 @@ services:
       - 4000:4000
 
   blockscout_frontend:
-    image: ghcr.io/sidrachain/blockscout-frontend:latest
+    image: ghcr.io/blockscout/frontend:v9.0.0
     pull_policy: always
     restart: always
     environment:
