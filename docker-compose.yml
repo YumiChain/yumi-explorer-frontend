@@ -74,7 +74,7 @@ services:
 
   blockscout_frontend:
     build:
-      context: https://github.com/SidraChain/blockscout-frontend.git
+      context: ./explorer-frontend
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_STATS_API_HOST: http://139.59.14.136:4000
