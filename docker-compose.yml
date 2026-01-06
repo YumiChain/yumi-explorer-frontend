@@ -1,0 +1,111 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: blockscout
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  blockscout:
+    image: ghcr.io/blockscout/blockscout:latest
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: ["/bin/sh", "-c", "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"]
+    environment:
+      PHX_HOST: 139.59.14.136
+      HTTP_PORT: 4000
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/blockscout?ssl=false
+      ECTO_USE_SSL: 'false'
+      REDIS_URL: redis://redis:6379/1
+      ETHEREUM_JSONRPC_VARIANT: geth
+      ETHEREUM_JSONRPC_HTTP_URL: http://206.189.137.166:8545
+      ETHEREUM_JSONRPC_WS_URL: ws://206.189.137.166:8545
+      CHAIN_ID: '7998'
+      NETWORK: Yumi
+      SUBNETWORK: Mainnet
+      COIN: YUMI
+      STATS_ENABLED: 'true'
+      ENABLE_STATS: 'true'
+      CHARTS_ENABLED: 'true'
+      ENABLE_INDEXER: 'true'
+      DISABLE_WEBAPP: 'false'
+      STATS__FORCE_UPDATE_ON_START: 'true'
+      INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'false'
+      INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
+      INDEXER_DISABLE_BLOCK_REWARD_FETCHER: 'true'
+      INDEXER_DISABLE_VISUALIZER_FETCHER: 'false'
+      INDEXER_DISABLE_MARKET_HISTORY_FETCHER: 'true'
+      INDEXER_DISABLE_BLOCK_REWARDS: 'true'
+      DISABLE_EXCHANGE_RATES: 'true'
+      SHOW_GAS_PRICE: 'true'
+      GAS_PRICE: '1'
+      SECRET_KEY_BASE: '56789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuv64'
+      CORS_ALLOWED_ORIGINS: "*"
+      API_V1_ENABLED: 'true'
+      API_V1_PAGES_MAIN_ENABLED: 'true'
+      API_V1_PAGES_MAIN_STATS_ENABLED: 'true'
+      API_V1_PAGES_MAIN_TRANSACTIONS_ENABLED: 'true'
+      API_V1_PAGES_MAIN_BLOCKS_ENABLED: 'true'
+      SHOW_PRICE_CHART: 'false'
+      ADMIN_PANEL_ENABLED: 'true'
+    ports:
+      - 4000:4000
+
+  blockscout_frontend:
+    build:
+      context: https://github.com/SidraChain/blockscout-frontend.git
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_STATS_API_HOST: http://139.59.14.136:4000
+        NEXT_PUBLIC_IS_STATS_ENABLED: 'true'
+        NEXT_PUBLIC_DASHBOARD_STATS_ENABLED: 'true'
+        NEXT_PUBLIC_GAS_TRACKER_ENABLED: 'true'
+        NEXT_PUBLIC_API_PROTOCOL: http
+        NEXT_PUBLIC_API_HOST: 139.59.14.136
+        NEXT_PUBLIC_API_PORT: 4000
+        NEXT_PUBLIC_SHOW_CHARTS: 'true'
+    restart: always
+    environment:
+      NEXT_PUBLIC_API_PROTOCOL: http
+      NEXT_PUBLIC_API_HOST: 139.59.14.136
+      NEXT_PUBLIC_API_PORT: 4000
+      NEXT_PUBLIC_STATS_API_HOST: http://139.59.14.136:4000
+      NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL: ws
+      NEXT_PUBLIC_NETWORK_NAME: Yumi
+      NEXT_PUBLIC_NETWORK_ID: '7998'
+      NEXT_PUBLIC_APP_HOST: 139.59.14.136
+      NEXT_PUBLIC_APP_PORT: 3000
+      NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL: 'YUMI'
+      NEXT_PUBLIC_NETWORK_CURRENCY_NAME: 'Yumi Token'
+      NEXT_PUBLIC_NETWORK_CURRENCY_DECIMALS: '18'
+      NEXT_PUBLIC_GAS_TRACKER_ENABLED: 'true'
+      NEXT_PUBLIC_PROMOTE_BLOCKSCOUT_IN_TITLE: 'false'
+      NEXT_PUBLIC_OG_DESCRIPTION: 'Yumi Chain Explorer - Explore blocks, transactions and addresses'
+      NEXT_PUBLIC_HOMEPAGE_STATS: '["total_blocks","average_block_time","total_txs","wallet_addresses","gas_tracker"]'
+    ports:
+      - 3000:3000
+
+volumes:
+  postgres_data:
+  redis_data:
