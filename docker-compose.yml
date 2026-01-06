@@ -73,18 +73,8 @@ services:
       - 4000:4000
 
   blockscout_frontend:
-    build:
-      context: ./explorer-frontend
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_STATS_API_HOST: http://139.59.14.136:4000
-        NEXT_PUBLIC_IS_STATS_ENABLED: 'true'
-        NEXT_PUBLIC_DASHBOARD_STATS_ENABLED: 'true'
-        NEXT_PUBLIC_GAS_TRACKER_ENABLED: 'true'
-        NEXT_PUBLIC_API_PROTOCOL: http
-        NEXT_PUBLIC_API_HOST: 139.59.14.136
-        NEXT_PUBLIC_API_PORT: 4000
-        NEXT_PUBLIC_SHOW_CHARTS: 'true'
+    image: ghcr.io/sidrachain/blockscout-frontend:latest
+    pull_policy: always
     restart: always
     environment:
       NEXT_PUBLIC_API_PROTOCOL: http
